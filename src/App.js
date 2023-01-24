@@ -5,8 +5,8 @@ import InputMask from 'react-input-mask';
 import axios from 'axios';
 
 const defaultCenter = {
-  lat: -3.745,
-  lng: -38.523
+  lat: 38.967,
+  lng: -100.77
 }
 
 let timeout = null;
@@ -22,7 +22,6 @@ const circleOptions = {
   editable: false,
   visible: true,
   radius: 1600,
-  center: defaultCenter,
   zIndex: 2147483647
 }
 
@@ -61,12 +60,21 @@ function App() {
     }
     setMessage('');
     document.getElementById('loadSpinner').style.display = "flex";
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/?q=${phone}`)
-      .then(res => setMapsData(res.data))
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/?phone=${phone}`)
+      .then(res => {
+        if (res.data.msg) {
+          setMessage(res.data.msg);
+        }
+        if (res.data.data) {
+          setMapsData(res.data.data);
+        } else {
+          setMapsData(defaultCenter);
+        }
+      })
       .catch(err => {
         console.error(err);
         setMessage("An error occurred. Please try again.");
-        setMapsData({});
+        setMapsData(defaultCenter);
       })
       .then(() => document.getElementById('loadSpinner').style.display = "none");
   }, [queryString])
@@ -96,22 +104,31 @@ function App() {
         <div id="loadSpinner" className="items-center justify-center hidden">
           <div className="w-16 h-16 border-b-2 border-gray-900 rounded-full animate-spin"></div>
         </div>
-        {message !== "" && <div>{message}</div>}
+        {message !== "" && <div className='text-red-700'>{message}</div>}
         <div className='mt-2 rounded-lg'>
-          <LoadScript className="w-12 mt-6 rounded-lg"
+          <LoadScript
+            className="w-12 mt-6 rounded-lg"
             googleMapsApiKey={process.env.REACT_APP_GMAPS_API_KEY || ""}
           >
             <GoogleMap
               id="mapss-id"
               mapContainerStyle={{
-                width: '900px',
-                height: '400px'
+                width: '1000px',
+                height: '500px'
               }}
               center={mapsData}
-              zoom={12}
+              // eslint-disable-next-line 
+              zoom={(mapsData == defaultCenter) ? 4 : 9}
             >
-              <Circle center={mapsData} options={circleOptions} />
-              {/* <Marker position={mapsData} /> */} 
+              {
+                // eslint-disable-next-line
+                (mapsData != defaultCenter) && 
+                <Circle
+                  center={mapsData}
+                  radius={32000}
+                  options={circleOptions}
+                />
+              }
               <></>
             </GoogleMap>
           </LoadScript>
