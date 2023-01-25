@@ -1,8 +1,13 @@
 import './App.css';
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, LoadScript, Circle } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, Circle, InfoWindow } from '@react-google-maps/api';
 import InputMask from 'react-input-mask';
 import axios from 'axios';
+import Geocode from "react-geocode";
+
+Geocode.setApiKey(process.env.REACT_APP_GMAPS_API_KEY);
+Geocode.setRegion("us");
+// Geocode.setLocationType("ROOFTOP");
 
 const defaultCenter = {
   lat: 38.967,
@@ -40,6 +45,7 @@ function App() {
   const [queryString, setQueryString] = useState('');
   const [mapsData, setMapsData] = useState(defaultCenter);
   const [message, setMessage] = useState('');
+  const [addr, setAddr] = useState('');
   function handleChange(event) {
     setQueryString(event.target.value);
   }
@@ -67,6 +73,10 @@ function App() {
         }
         if (res.data.data) {
           setMapsData(res.data.data);
+          Geocode.fromLatLng(res.data.data.lat, res.data.data.lng).then(
+            response => setAddr(response.results[0].formatted_address),
+            error => console.error(error)
+          );
         } else {
           setMapsData(defaultCenter);
         }
@@ -128,6 +138,15 @@ function App() {
                   radius={32000}
                   options={circleOptions}
                 />
+              }
+              {
+                // eslint-disable-next-line
+                (mapsData != defaultCenter && addr) && 
+                <InfoWindow
+                  position={mapsData}
+                >
+                  <p>{addr}</p>
+                </InfoWindow>
               }
               <></>
             </GoogleMap>
